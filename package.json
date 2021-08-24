@@ -1,0 +1,17 @@
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "description": "Its express",
+  "main": "Day22.js",
+  "scripts": {
+    "ayush": "npx nodemon app"
+  },
+  "author": "Ayush Bisht",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.13.8",
+    "nodemon": "^2.0.12"
+  }
+}
