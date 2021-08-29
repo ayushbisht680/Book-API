@@ -1,219 +1,189 @@
 const Router = require("express").Router();
-
 const BookModel = require("../schema/book");
 const AuthorModel = require("../schema/author");
-// const PublicationModel = require("../schema/publication");
 
-//ROUTE -- /book
-// desc --to get all books
-// ACCESS -- public
-// METHOD -- get
-//  PARAMS --none
-// BODY --none
+/* ------------------------ GET APIs -------------------------- */
 
-Router.get("/book", async (req, res) => {
-  const getAllBooks = await BookModel.find(); // will wait for this line of code to execute
+// Route    - /book
+// Des      - to get all books
+// Access   - Public
+// Method   - GET
+// Params   - none
+// Body     - none
+
+Router.get("/", async (req, response) => {
+  const getAllBooks = await BookModel.find();
   return res.json(getAllBooks);
 });
 
-//ROUTE -- /book/bookId (entered by user)
-// desc --to get a specific books
-// ACCESS -- public
-// METHOD -- get
-//  PARAMS -- bookId
-// BODY --none
+// Route    - /book/:BookID
+// Des      - to get specific book
+// Access   - Public
+// Method   - GET
+// Params   - bookID
+// Body     - none
 
-Router.get("/book/:bookId", async (req, res) => {
-  const getSpecificBook = await BookModel.findOne({ ISBN: req.params.bookId });
+Router.get("/:bookID", async (req, res) => {
+  const getSpecificBook = await BookModel.findOne({
+    ISBN: req.params.bookID,
+  });
 
   if (!getSpecificBook) {
-    return res.json({ error: `No book found for if ${req.params.bookId}` });
+    return res.json({
+      error: `No book found for the ISBN of ${req.params.bookID}`,
+    });
   }
 
   return res.json(getSpecificBook);
 });
 
-//ROUTE -- /book/c/category (entered by user)
-// desc --to get a  book based on category
-// ACCESS -- public
-// METHOD -- get
-// PARAMS -- category
-// BODY --none
+// Route    - /book/cat/:category
+// Des      - to get a list of books based on category
+// Access   - Public
+// Method   - GET
+// Params   - category
+// Body     - none
 
-Router.get("/book/c/:category", async (req, res) => {
-  const getByCategory = await BookModel.find({ category: req.params.category });
-  // monogoDB automatically iterates inside the arrays as well
-  if (!getByCategory) {
-    return res.json({ error: `no category found of ${req.params.category}` });
+Router.get("/cat/:category", async (req, res) => {
+  const getSpecificBook = await BookModel.findOne({
+    category: req.params.category,
+  });
+
+  if (!getSpecificBook) {
+    return res.json({
+      error: `No book found for the category of ${req.params.category}`,
+    });
   }
 
-  return res.json({ books: getByCategory });
+  return res.json(getSpecificBook);
 });
 
-//ROUTE -- /book/a/author (entered by user)
-// desc --to get a book based on author
-// ACCESS -- public
-// METHOD -- get
-// PARAMS -- author
-// BODY --none
+// Route    - /book/aut/:author
+// Des      - to get a list of books based on author
+// Access   - Public
+// Method   - GET
+// Params   - author
+// Body     - none
 
-Router.get("/book/a/:ID", (req, res) => {
-  const { ID } = req.params;
-  const myAuthor = database.Book.filter((book) =>
-    book.authors.includes(parseInt(ID))
-  );
-  return res.json({ book: myAuthor });
+Router.get("/aut/:author", async (req, res) => {
+  const getSpecificBook = await BookModel.findOne({
+    authors: parseInt(req.params.author),
+  });
+
+  if (!getSpecificBook) {
+    return res.json({
+      error: `No book found for the author of ${parseInt(
+        req.params.author
+      )}`,
+    });
+  }
+
+  return response.json(getSpecificBook);
 });
 
-//ROUTE -- /book/new
-// desc --to add a new book
-// ACCESS -- public
-// METHOD -- post
-// PARAMS -- none
+/* ------------------------ POST APIs -------------------------- */
 
-Router.post("/book/new", async (req, res) => {
+// Route    - /book/new
+// Des      - to add new books
+// Access   - Public
+// Method   - POST
+// Params   - none
+// Body     - { newBook : { details } }
+
+Router.post("/new", (req, response) => {
   try {
     const { newBook } = req.body;
-    await BookModel.create(newBook);
-    return res.json({ message: "Book Added to Database" });
+
+    BookModel.create(newBook);
+    return response.json({ message: "Book added to the database" });
   } catch (error) {
-    return res.json({ error: error });
+    return response.json({ error: error.message });
   }
 });
 
-//ROUTE -- /book/update/:isbn
-// desc --to update a books title or anyfield
-// ACCESS -- public
-// METHOD -- put
-// PARAMS -- ISBN (so we can find the find book)
+/* ------------------------ PUT APIs -------------------------- */
 
-Router.put("/book/update/:isbn", async (req, res) => {
-  const { myBook } = req.body;
+// Route    - /book/update/:isbn
+// Des      - update book title
+// Access   - Public
+// Method   - PUT
+// Params   - isbn
+// Body     - { title: newTtile }
 
+Router.put("/update/:isbn", async (req, response) => {
   const updatedBook = await BookModel.findOneAndUpdate(
-    {
-      // first find
-      ISBN: req.params.isbn,
-    },
-    {
-      // update
-      title: myBook.title,
-    },
-    {
-      // for reflecting the change in res json
-      new: true,
-    }
+    { ISBN: req.params.isbn },
+    { title: req.body.title },
+    { new: true }
   );
 
-  res.json({ book: updatedBook });
+  return response.json(updatedBook);
 });
 
-//ROUTE -- /book/newAuthor/:isbn
-// desc --to update/add new author
-// ACCESS -- public
-// METHOD -- put
-// PARAMS -- ISBN (so we can find the find)
+// Route    - /book/updateAuthour/:isbn
+// Des      - to update/add new author
+// Access   - Public
+// Method   - PUT
+// Params   - isbn
+// Body     - { "newAuthor": id }
 
-Router.put("/book/newAuthor/:isbn", async (req, res) => {
-  const { newAuthor } = req.body;
-  const { isbn } = req.params;
-
+Router.put("/updateAuthour/:isbn", async (req, response) => {
   const updatedBook = await BookModel.findOneAndUpdate(
-    {
-      ISBN: isbn,
-    },
-    {
-      $addToSet: {
-        // will add only if its not present
-        authors: newAuthor,
-      },
-    },
-    {
-      new: true,
-    }
+    { ISBN: req.params.isbn },
+    { $addToSet: { authors: req.body.newAuthor } },
+    { new: true }
   );
 
   const updatedAuthor = await AuthorModel.findOneAndUpdate(
-    {
-      id: newAuthor,
-    },
-    {
-      $addToSet: {
-        books: isbn,
-      },
-    },
-    {
-      new: true,
-    }
+    { id: req.body.newAuthor },
+    { $addToSet: { books: req.params.isbn } },
+    { new: true }
   );
 
-  return res.json({
-    book: updatedBook,
-    author: updatedAuthor,
-    message: `Added to the database successfylly`,
-  });
+  return response.json({ book: updatedBook, author: updatedAuthor });
 });
 
-//ROUTE -- /book/delete/:isbn
-// desc --delete a book
-// ACCESS -- public
-// METHOD -- delete
-// PARAMS -- isbn
-// BODY -- none(only isbn is needed)
+/* ------------------------ DELETE APIs -------------------------- */
 
-Router.delete("/book/delete/:isbn", async (req, res) => {
-  const { isbn } = req.params;
+// Route    - /book/deleteBook/:BookID
+// Des      - to get specific book
+// Access   - Public
+// Method   - DELETE
+// Params   - bookID
+// Body     - none
 
+Router.delete("/deleteBook/:BookID", async (req, response) => {
   const updatedBook = await BookModel.findOneAndDelete({
-    ISBN: isbn,
+    ISBN: req.params.BookID,
   });
 
-  res.json({ books: updatedBook });
+  return response.json({ books: updatedBook });
 });
 
-/*
-Route                   /book/delete/author/:isbn/:id
-Description             delte an author from a book
-Access                  PUBLIC
-Parameters              isbn,id
-Method                  DELETE
-*/
-Router.delete("/book/delete/author/:Isbn/:Id", async (req, res) => {
-  const { Isbn, Id } = req.params;
+// Route    - /book/deleteAuthor/:BookID/:authorID
+// Des      - delete an author from the book
+// Access   - Public
+// Method   - DELETE
+// Params   - bookID, authorID
+// Body     - none
+
+Router.delete("/deleteAuthor/:BookID/:authorID", async (req, response) => {
+  const isbn = req.params.BookID;
+  const author_ = parseInt(req.params.authorID);
 
   const updatedBook = await BookModel.findOneAndUpdate(
-    {
-      ISBN: Isbn,
-    },
-    {
-      $pull: {
-        authors: parseInt(Id),
-      },
-    },
-    {
-      new: true,
-    }
+    { ISBN: isbn },
+    { $pull: { authors: author_ } },
+    { new: true }
   );
 
   const updatedAuthor = await AuthorModel.findOneAndUpdate(
-    {
-      id: parseInt(Id),
-    },
-    {
-      $pull: {
-        books: Isbn,
-      },
-    },
-    {
-      new: true,
-    }
+    { id: author_ },
+    { $pull: { books: isbn } },
+    { new: true }
   );
 
-  return res.json({
-    book: updatedBook,
-    author: updatedAuthor,
-    message: "Delete was successful",
-  });
+  return response.json({ book: updatedBook, author: updatedAuthor });
 });
 
 module.exports = Router;

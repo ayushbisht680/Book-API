@@ -1,133 +1,118 @@
 const Router = require("express").Router();
-
-const BookModel = require("../schema/book");
 const AuthorModel = require("../schema/author");
-const PublicationModel = require("../schema/publication");
 
-//ROUTE -- /author
-// desc --to get all author
-// ACCESS -- public
-// METHOD -- get
-//  PARAMS -- none
-// BODY --none
 
-Router.get("/author", async (req, res) => {
-  const getAllAuthors = await AuthorModel.find();
-  return res.json(getAllAuthors);
+/* ------------------------ GET APIs -------------------------- */
+
+
+// Route    - /author
+// Des      - to get all authors
+// Access   - Public
+// Method   - GET
+// Params   - none
+// Body     - none
+
+Router.get("/", async (req, res) => {
+    const getAllAuthors = await AuthorModel.find();
+    return res.json(getAllAuthors);
 });
 
-//ROUTE -- /author/id
-// desc --to get specific author
-// ACCESS -- public
-// METHOD -- get
-// PARAMS -- id
-// BODY --none
+// Route    - /author/aut/:author_
+// Des      - to get specific author
+// Access   - Public
+// Method   - GET
+// Params   - author
+// Body     - none
 
-Router.get("/author/:Id", (req, res) => {
-  const { Id } = req.params;
-  const bookAuthor = database.Author.filter(
-    (author) => author.id === parseInt(Id)
-  );
-  return res.json({ author: bookAuthor });
-});
+Router.get("/aut/:author_", async (req, res) => {
+    const getSpecificAuthor = await AuthorModel.findOne({id: parseInt(req.params.author_)});
 
-//ROUTE -- /author/new
-// desc --to add a new author
-// ACCESS -- public
-// METHOD -- post
-// PARAMS -- none
-
-Router.post("/author/new", async (req, res) => {
-  try {
-    const { newAuthor } = req.body;
-    await AuthorModel.create(newAuthor);
-    return res.json({ message: "Author Added to Database" });
-  } catch (error) {
-    return res.json({ error: `The Error is ${error}` });
-  }
-});
-
-//ROUTE -- /author/update/:id
-// desc --to update a authors info
-// ACCESS -- public
-// METHOD -- put
-// PARAMS -- id (so we can find the find author)
-
-Router.put("/author/update/:ID", (req, res) => {
-  const { updatedAuthor } = req.body;
-  const { ID } = req.params;
-
-  const authors = database.Author.map((author) => {
-    if (author.id === parseInt(ID)) {
-      return { ...author, ...updatedAuthor };
+    if (!getSpecificAuthor) {
+        return res.json({
+            error: `No author found for the id of ${parseInt(req.params.author_)}`
+    });
     }
-    return author;
-  });
 
-  return res.json(authors);
+    return res.json(getSpecificAuthor);
 });
 
-//ROUTE -- /author/newBook/:id
-// desc --to update/add new book
-// ACCESS -- public
-// METHOD -- put
-// PARAMS -- ID (so we can find the find)
+// Route    - /author/book/:book
+// Des      - to get list of author based on a book
+// Access   - Public
+// Method   - GET
+// Params   - author
+// Body     - none
 
-Router.put("/author/newBook/:ID", (req, res) => {
-  const { newBook } = req.body;
-  const { ID } = req.params;
+Router.get("/book/:book", async (req, res) => {
+    const getSpecificAuthor = await AuthorModel.findOne({books: req.params.book});
 
-  database.Author.forEach((author) => {
-    if (author.id === parseInt(ID)) {
-      if (!author.books.includes(newBook)) {
-        author.books.push(newBook);
-        return author;
-      }
-      return author;
+    if (!getSpecificAuthor) {
+        return res.json({
+            error: `No author found for the book ${req.params.book}`
+    });
     }
-    return author;
-  });
 
-  res.json({ author: database.Author });
+    return res.json(getSpecificAuthor);
 });
 
-//ROUTE -- /author/newName/:id
-// desc --to update author name in Author
-// ACCESS -- public
-// METHOD -- put
-// PARAMS -- ID (so we can find the find)
 
-Router.put("/author/newName/:ID", (req, res) => {
-  const { newName } = req.body;
-  const { ID } = req.params; // it is in string form
+/* ------------------------ POST APIs -------------------------- */
 
-  database.Author.forEach((author) => {
-    if (author.id === parseInt(ID)) {
-      author.name = newName;
-      return author;
+// Route    - /author/new
+// Des      - to add new author
+// Access   - Public
+// Method   - POST
+// Params   - none
+// Body     - { newAuthor: { details } }
+
+Router.post("/new", (req, res) => {
+    try {
+        const { newAuthor } = req.body;
+
+        AuthorModel.create(newAuthor);
+        return res.json({ message: "Author added to the database" });
     }
-    return author;
-  });
-
-  res.json(database.Author);
+    catch(error) {
+        return res.json({ error: error.message });
+    }
 });
 
-/*
-Route                   /author/delete/:id
-Description             delte an author 
-Access                  PUBLIC
-Parameters              id
-Method                  DELETE
-*/
 
-Router.delete("/author/delete/:ID", async (req, res) => {
-  const { ID } = req.params;
+/* ------------------------ PUT APIs -------------------------- */
 
-  const updatedAuthor = await AuthorModel.findOneAndDelete({
-    id: ID,
-  });
+// Route    - /author/update/:id
+// Des      - update author details
+// Access   - Public
+// Method   - PUT
+// Params   - id
+// Body     - { "name": { newName } }
 
-  res.json({ Author: updatedAuthor });
+Router.put("/update/:id", async (req, res) => {
+    const updatedAuthor = await AuthorModel.findOneAndUpdate(
+        { id: parseInt(req.params.id) },
+        { name: req.body.name },
+        { new: true }
+    );
+
+    return res.json(updatedAuthor);
+});
+
+
+/* ------------------------ DELETE APIs -------------------------- */
+
+// Route    - /author/delete/:authorID
+// Des      - delete an author
+// Access   - Public
+// Method   - DELETE
+// Params   - authorID
+// Body     - none
+
+Router.delete("/delete/:authorID", async (req, res) => {
+    const updatedAuthor = await AuthorModel.findOneAndDelete( 
+        { id: parseInt(req.params.authorID) }
+    );
+
+    return res.json({ authros: updatedAuthor });
 });
 
 module.exports = Router;

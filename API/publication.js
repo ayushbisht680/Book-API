@@ -1,154 +1,168 @@
 const Router = require("express").Router();
-
 const BookModel = require("../schema/book");
-const AuthorModel = require("../schema/author");
 const PublicationModel = require("../schema/publication");
 
-//ROUTE -- /public
-// desc --to get all publications
-// ACCESS -- public
-// METHOD -- get
-// PARAMS -- none
-// BODY --none
 
-Router.get("/public", (req, res) => {
-  return res.json({ public: database.Publication });
+/* ------------------------ GET APIs -------------------------- */
+
+
+// Route    - /publication
+// Des      - to get all publication
+// Access   - Public
+// Method   - GET
+// Params   - none
+// Body     - none
+
+Router.get("/", async (req, res) => {
+    const getAllPublication = await PublicationModel.find();
+    return res.json(getAllPublication);
 });
 
-//ROUTE -- /public/:publicName
-// desc --to get specific publications
-// ACCESS -- public
-// METHOD -- get
-// PARAMS -- publication name
-// BODY --none
+// Route    - /publication/pub/:pub_
+// Des      - to get specific publication
+// Access   - Public
+// Method   - GET
+// Params   - publication
+// Body     - none
 
-Router.get("/public/:publicName", (req, res) => {
-  const myPublic = database.Publication.filter((public) => {
-    return public.name === req.params.publicName;
-  });
+Router.get("/pub/:pub_", async (req, res) => {
+    const getSpecificPublication = await PublicationModel.findOne({id: parseInt(req.params.pub_)});
 
-  return res.json({ publication: myPublic });
-});
-
-//ROUTE -- /public/p/bookId
-// desc --to get a list of publication based on a book
-// ACCESS -- public
-// METHOD -- get
-// PARAMS -- publication book Id
-// BODY --none
-
-Router.get("/public/p/:bookId", (req, res) => {
-  const myPublic1 = database.Publication.filter((public) => {
-    return public.books.includes(req.params.bookId);
-  });
-
-  return res.json({ publication: myPublic1 });
-});
-
-//ROUTE -- /public/new
-// desc --to add a new publication
-// ACCESS -- public
-// METHOD -- post
-// PARAMS -- none
-
-Router.post("/public/new", (req, res) => {
-  const { newPublic } = req.body;
-  database.Publication.push(newPublic);
-  // no changes in database.js only creating a copy no permanant changes will happen
-  res.json(database.Publication);
-});
-
-//ROUTE -- /pubic/update/:id
-// desc --to update a publication info
-// ACCESS -- public
-// METHOD -- put
-// PARAMS -- id (so we can find the find author)
-
-Router.put("/public/update/:ID", (req, res) => {
-  const { updatedPublic } = req.body;
-  const { ID } = req.params;
-
-  const publics = database.Publication.map((public) => {
-    if (public.id === parseInt(ID)) {
-      return { ...public, ...updatedPublic };
+    if (!getSpecificPublication) {
+        return res.json({
+            error: `No publication found for the id of ${parseInt(req.params.pub_)}`
+    });
     }
-    return public;
-  });
 
-  res.json(publics);
+    return res.json(getSpecificPublication);
 });
 
-//ROUTE -- /public/newBook/:id
-// desc --to update/add new book in publication
-// ACCESS -- public
-// METHOD -- put
-// PARAMS -- ID (so we can find the find)
+// Route    - /publication/book/:book_
+// Des      - to get a list of publication based on a book
+// Access   - Public
+// Method   - GET
+// Params   - book
+// Body     - none
 
-Router.put("/public/newBook/:ID", (req, res) => {
-  const { newBook } = req.body;
-  const { ID } = req.params;
+Router.get("/book/:book_", async (req, res) => {
+    const getSpecificPublication = await PublicationModel.findOne({books: req.params.book_});
 
-  database.Publication.forEach((public) => {
-    if (public.id === parseInt(ID)) {
-      if (!public.books.includes(newBook)) {
-        public.books.push(newBook);
-        return public;
-      }
-      return public;
+    if (!getSpecificPublication) {
+        return res.json({
+            error: `No publication found for the book ${req.params.book_}`
+    });
     }
-    return public;
-  });
 
-  res.json({ public: database.Publication });
+    return res.json(getSpecificPublication);
 });
 
-/*
-  Route                   /public/delete/:id
-  Description             delte a publication 
-  Access                  PUBLIC
-  Parameters              id
-  Method                  DELETE
-  */
 
-Router.delete("/public/delete/:ID", async (req, res) => {
-  const { ID } = req.params;
+/* ------------------------ POST APIs -------------------------- */
 
-  const updatedPublic = await PublicationModel.findOneAndDelete({
-    id: ID,
-  });
+// Route    - /publication/new
+// Des      - to add new publication
+// Access   - Public
+// Method   - POST
+// Params   - none
+// Body     - { newPublication: { details } }
 
-  res.json({ Publication: updatedPublic });
+Router.post("/new", (req, res) => {
+    try {
+        const { newPublication } = req.body;
+
+        PublicationModel.create(newPublication);
+        return res.json({ message: "Publication added to the database" });
+    }
+    catch(error) {
+        return res.json({ error: error.message });
+    }
 });
 
-/*
-  Route                   /public/delete/book/:isbn/:id
-  Description             delte a book from publication 
-  Access                  PUBLIC
-  Parameters              isbn ,id
-  Method                  DELETE
-  */
 
-Router.delete("/public/delete/book/:isbn/:id", (req, res) => {
-  const { isbn, id } = req.params;
+/* ------------------------ PUT APIs -------------------------- */
 
-  database.Book.forEach((book) => {
-    if (book.ISBN === isbn) {
-      book.publication = 0; // overriding
-      return book;
-    }
-    return book;
-  });
+// Route    - /publication/update/:id
+// Des      - update publication
+// Access   - Public
+// Method   - PUT
+// Params   - id
+// Body     - { "name": { newName } }
 
-  database.Publication.forEach((publication) => {
-    if (publication.id === parseInt(id)) {
-      const filteredBooks = publication.books.filter((book) => book !== isbn);
-      publication.books = filteredBooks;
-      return publication;
-    }
-    return publication;
-  });
+Router.put("/update/:id", async (req, res) => {
+    const updatedPublication = await PublicationModel.findOneAndUpdate(
+        { id: parseInt(req.params.id) },
+        { name: req.body.name },
+        { new: true }
+    );
 
-  return res.json({ book: database.Book, publication: database.Publication });
+    return res.json(updatedPublication);
+});
+
+// Route    - /publication/updateBook/:id
+// Des      - to update/add new book
+// Access   - Public
+// Method   - PUT
+// Params   - id
+// Body     - { "book": ISBN }
+
+Router.put("/updateBook/:id", async (req, res) => {
+    const updatedPublication = await PublicationModel.findOneAndUpdate(
+        { id: parseInt(req.params.id) },
+        { $addToSet: { books: req.body.book } },
+        { new: true }
+    );
+    
+    const updatedBook = await BookModel.findOneAndUpdate(
+        { ISBN: req.body.book },
+        { publication: parseInt(req.params.id) },
+        { new: true }
+    );
+
+    return res.json({ publication: updatedPublication, book: updatedBook });
+});
+
+
+/* ------------------------ DELETE APIs -------------------------- */
+
+// Route    - /publication/delete/:publicationId
+// Des      - delete a publication
+// Access   - Public
+// Method   - DELETE
+// Params   - publicationID
+// Body     - none
+
+Router.delete("/delete/:publicationId", async (req, res) => {
+    const updatedPublication = await PublicationModel.findOneAndDelete( 
+        { id: parseInt(req.params.publicationId) }
+    );
+
+    return res.json({ publications: updatedPublication });
+});
+
+// Route    - /publication/deleteBook/:publicationId/:bookId
+// Des      - delete a book from publication
+// Access   - Public
+// Method   - DELETE
+// Params   - publicationID, bookID
+// Body     - none
+
+Router.delete("/deleteBook/:publicationId/:bookId", async (req, res) => {
+    const id = parseInt(request.params.publicationId);
+    const isbn = request.params.bookId;
+
+    const updatedPublication = await PublicationModel.findOneAndUpdate(
+        { id: id },
+        { $pull: { books: isbn } },
+        { new: true }
+    );
+
+    const updatedBook = await BookModel.findOneAndUpdate(
+        { ISBN: isbn },
+        { publication: -1 },
+        { new: true }
+    );
+
+    res.json({ publication: updatedPublication, book: updatedBook })
 });
 
 module.exports = Router;
